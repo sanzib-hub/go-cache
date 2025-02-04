@@ -19,7 +19,7 @@ func New(addr string) *Client {
 }
 
 func (c *Client) Set(ctx context.Context, key string, val string) error{
-	conn, err := net.Dial("tcp", "localhost ")	 
+	conn, err := net.Dial("tcp", c.addr)	 
 	if err != nil{
 		return err
 	}
