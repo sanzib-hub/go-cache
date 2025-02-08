@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"go-redis/client"
 	"log"
 	"log/slog"
@@ -102,8 +103,9 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func main() {
+	server := NewServer(Config{})
+
 	go func() {
-		server := NewServer(Config{})
 		log.Fatal(server.Start())
 	}()
 
@@ -112,11 +114,12 @@ func main() {
 
 		c := client.New("localhost:8976")
 
-		if err := c.Set(context.TODO(), "foo", "bar"); err != nil {
+		if err := c.Set(context.TODO(), fmt.Sprintf("foo_%d", i), fmt.Sprintf("bar %d", i)); err != nil {
 			log.Fatal(err)
 		}
 	}
 
+	fmt.Println(server.kv.data)
 	time.Sleep(time.Second)
 
 }
