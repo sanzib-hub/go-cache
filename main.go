@@ -23,7 +23,7 @@ type Server struct {
 	quitCh    chan struct{}
 	msgCh     chan []byte
 
-	kv *KV 	
+	kv *KV
 }
 
 func NewServer(cfg Config) *Server {
@@ -36,7 +36,7 @@ func NewServer(cfg Config) *Server {
 		addPeerCh: make(chan *Peer),
 		quitCh:    make(chan struct{}),
 		msgCh:     make(chan []byte),
-		kv: 		NewKV(),
+		kv:        NewKV(),
 	}
 }
 
@@ -52,8 +52,6 @@ func (s *Server) Start() error {
 	return s.acceptLoop()
 
 }
-
-
 
 func (s *Server) handleRawMessage(rawMsg []byte) error {
 	cmd, err := parseCommand(string(rawMsg))
@@ -110,16 +108,16 @@ func main() {
 	}()
 
 	time.Sleep(time.Second)
+	
+	c := client.New("localhost:8976")
 	for i := 0; i < 10; i++ {
-
-		c := client.New("localhost:8976")
 
 		if err := c.Set(context.TODO(), fmt.Sprintf("foo_%d", i), fmt.Sprintf("bar %d", i)); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	fmt.Println(server.kv.data)
 	time.Sleep(time.Second)
+	fmt.Println(server.kv.data)
 
 }
