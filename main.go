@@ -1,23 +1,21 @@
 package main
 
 import (
-	"context"
+	"flag"
 	"fmt"
-	"go-redis/client"
 	"log"
 	"log/slog"
 	"net"
-	"time"
 )
 
 const defaultListenAddr = ":8976"
 
 type Config struct {
-	ListenAddress string
+	ListenAddr string
 }
 
-type Message struct{
-	data []byte
+type Message struct {
+	cmd  Command
 	peer *Peer
 }
 
@@ -33,8 +31,8 @@ type Server struct {
 }
 
 func NewServer(cfg Config) *Server {
-	if len(cfg.ListenAddress) == 0 {
-		cfg.ListenAddress = defaultListenAddr
+	if len(cfg.ListenAddr) == 0 {
+		cfg.ListenAddr = defaultListenAddr
 	}
 	return &Server{
 		Config:    cfg,
@@ -47,37 +45,34 @@ func NewServer(cfg Config) *Server {
 }
 
 func (s *Server) Start() error {
-	ln, err := net.Listen("tcp", s.ListenAddress)
+	ln, err := net.Listen("tcp", s.ListenAddr)
 	if err != nil {
 		return err
 	}
 	s.ln = ln
 	go s.loop()
 
-	slog.Info("server running", "listenAddr", s.ListenAddress)
+	slog.Info("goredis server running", "listenAddr", s.ListenAddr)
 	return s.acceptLoop()
 
 }
 
 func (s *Server) handleMessage(msg Message) error {
-	cmd, err := parseCommand(string(msg.data))
-	if err != nil {
-		return err
-	}
-	switch v := cmd.(type) {
+
+	switch v := msg.cmd.(type) {
 	case SetCommand:
 		return s.kv.Set(v.key, v.val)
 	case GetCommand:
 		val, ok := s.kv.Get(v.key)
-		if !ok{
+		if !ok {
 			return fmt.Errorf("key not found")
 		}
 		_, err := msg.peer.Send(val)
-		if err != nil{
+		if err != nil {
 			slog.Error("peer send err", "err", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -116,29 +111,12 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func main() {
-	server := NewServer(Config{})
+	listenAddr := flag.String("listenAddr", defaultListenAddr, "listend address of this server")
+	flag.Parse()
+	server := NewServer(Config{
+		ListenAddr: *listenAddr,
+	})
 
-	go func() {
-		log.Fatal(server.Start())
-	}()
-
-	time.Sleep(time.Second)
-
-	c := client.New("localhost:8976")
-	for i := 0; i < 10; i++ {
-
-		if err := c.Set(context.TODO(), fmt.Sprintf("foo_%d", i), fmt.Sprintf("bar %d", i)); err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(time.Second)
-		val,err := c.Get(context.TODO(), fmt.Sprintf("foo_%d", i))
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("got this back",val)
-	}
-
-	// fmt.Println(server.kv.data)
+	log.Fatal(server.Start())
 
 }
- 
