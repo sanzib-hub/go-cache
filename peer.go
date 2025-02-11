@@ -24,8 +24,8 @@ func NewPeer(conn net.Conn, msgCh chan Message) *Peer {
 		msgCh: msgCh,
 	}
 }
-func (p *Peer) readLoop() error {
 
+func (p *Peer) readLoop() error {
 	rd := resp.NewReader(p.conn)
 	for {
 		v, _, err := rd.ReadValue()
@@ -41,34 +41,33 @@ func (p *Peer) readLoop() error {
 				switch value.String() {
 				case CommandGet:
 					if len(v.Array()) != 2 {
-						return fmt.Errorf("invalid number of variables for get command")
+						return fmt.Errorf("invalid number of variables for GET command")
 					}
-
 					cmd := GetCommand{
 						key: v.Array()[1].Bytes(),
 					}
+
 					p.msgCh <- Message{
 						cmd:  cmd,
 						peer: p,
 					}
+
 				case CommandSet:
 					if len(v.Array()) != 3 {
-						return fmt.Errorf("invalid number of variables for set command")
+						return fmt.Errorf("invalid number of variables for SET command")
 					}
-
 					cmd := SetCommand{
 						key: v.Array()[1].Bytes(),
 						val: v.Array()[2].Bytes(),
 					}
+
 					p.msgCh <- Message{
 						cmd:  cmd,
 						peer: p,
 					}
-
 				}
 			}
 		}
-
 	}
 	return nil
 }

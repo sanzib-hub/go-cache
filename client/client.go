@@ -14,7 +14,6 @@ type Client struct {
 }
 
 func New(addr string) (*Client, error) {
-
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
@@ -26,10 +25,7 @@ func New(addr string) (*Client, error) {
 }
 
 func (c *Client) Set(ctx context.Context, key string, val string) error {
-	
-
 	var buf bytes.Buffer
-
 	wr := resp.NewWriter(&buf)
 	wr.WriteArray([]resp.Value{
 		resp.StringValue("SET"),
@@ -40,11 +36,8 @@ func (c *Client) Set(ctx context.Context, key string, val string) error {
 	return err
 }
 
-
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
-	
 	var buf bytes.Buffer
-
 	wr := resp.NewWriter(&buf)
 	wr.WriteArray([]resp.Value{
 		resp.StringValue("GET"),

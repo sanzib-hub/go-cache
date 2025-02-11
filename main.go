@@ -27,6 +27,7 @@ type Server struct {
 	quitCh    chan struct{}
 	msgCh     chan Message
 
+	//
 	kv *KV
 }
 
@@ -50,15 +51,15 @@ func (s *Server) Start() error {
 		return err
 	}
 	s.ln = ln
+
 	go s.loop()
 
 	slog.Info("goredis server running", "listenAddr", s.ListenAddr)
-	return s.acceptLoop()
 
+	return s.acceptLoop()
 }
 
 func (s *Server) handleMessage(msg Message) error {
-
 	switch v := msg.cmd.(type) {
 	case SetCommand:
 		return s.kv.Set(v.key, v.val)
@@ -69,10 +70,9 @@ func (s *Server) handleMessage(msg Message) error {
 		}
 		_, err := msg.peer.Send(val)
 		if err != nil {
-			slog.Error("peer send err", "err", err)
+			slog.Error("peer send error", "err", err)
 		}
 	}
-
 	return nil
 }
 
@@ -81,21 +81,21 @@ func (s *Server) loop() {
 		select {
 		case msg := <-s.msgCh:
 			if err := s.handleMessage(msg); err != nil {
-				slog.Error("Handle Raw Message Error", "err", err)
+				slog.Error("raw message eror", "err", err)
 			}
 		case <-s.quitCh:
 			return
 		case peer := <-s.addPeerCh:
 			s.peers[peer] = true
-
 		}
 	}
 }
+
 func (s *Server) acceptLoop() error {
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
-			slog.Error("accept error", "error", err)
+			slog.Error("accept error", "err", err)
 			continue
 		}
 		go s.handleConn(conn)
@@ -111,12 +111,10 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func main() {
-	listenAddr := flag.String("listenAddr", defaultListenAddr, "listend address of this server")
+	listenAddr := flag.String("listenAddr", defaultListenAddr, "listen address of the goredis server")
 	flag.Parse()
 	server := NewServer(Config{
 		ListenAddr: *listenAddr,
 	})
-
 	log.Fatal(server.Start())
-
 }
