@@ -1,22 +1,30 @@
-package client
+package main
 
 import (
 	"context"
 	"fmt"
+	"go-redis/client"
 	"log"
 	"sync"
 	"testing"
+	"time"
 )
 
+
 func TestServerWithMultiClients(t *testing.T) {
-	
+	server := NewServer(Config{})
+	go func() {
+
+		log.Fatal(server.Start())
+	}()
+	time.Sleep(time.Second)
 	nClients := 10
 	wg:= sync.WaitGroup{}
 	wg.Add(nClients)
 	for i := 0; i < nClients; i++ {
 		go func(it int){
 
-			c, err := New("localhost:8976")
+			c, err := client.New("localhost:8976")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -36,23 +44,9 @@ func TestServerWithMultiClients(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-}
+	time.Sleep(time.Second)
 
-// func TestNewClient(t *testing.T) {
-// 	c, err := New("localhost:8976")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	time.Sleep(time.Second)
-// 	for i := 0; i < 10; i++ {
-// 		fmt.Println("SET =>", fmt.Sprintf("bar_%d", i))
-// 		if err := c.Set(context.TODO(), fmt.Sprintf("foo_%d", i), fmt.Sprintf("bar_%d", i)); err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		val, err := c.Get(context.TODO(), fmt.Sprintf("foo_%d", i))
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		fmt.Println("GET =>", val)
-// 	}
-// }
+	if len(server.peers) != 0 {
+		t.Fatalf("expected 0 clients, got %d", len(server.peers))
+	}
+}
